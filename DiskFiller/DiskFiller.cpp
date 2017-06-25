@@ -12,10 +12,8 @@
 using namespace std;
 
 #define BUFFERSIZE 8192
-#define DIRECTORYNAME "C:\\DiskFill\\"
-#define DIRECTORYNAMEL L"C:\\DiskFill"
-#define FILENAMEMASK  L"C:\\DiskFill\\*"
-
+#define DIRECTORYNAME "DiskFill\\"
+#define DIRECTORYNAMEL  L"DiskFill\\"
 
 
 void fillBuff(unsigned char * buff, unsigned char value, size_t s)
@@ -28,11 +26,12 @@ void fillBuff(unsigned char * buff, unsigned char value, size_t s)
 	}
 }
 
-void fileFill(unsigned char * buff, int number, int loopCount)
+void fileFill(char * drive, unsigned char * buff, int number, int loopCount)
 {
 	ofstream file;
 	int i;
-	string name = DIRECTORYNAME + to_string(number) + ".bin";
+	string name = drive;
+	name += DIRECTORYNAME + to_string(number) + ".bin";
 
 	file.open(name, ios::binary);
 
@@ -44,13 +43,80 @@ void fileFill(unsigned char * buff, int number, int loopCount)
 	file.close();
 }
 
-int main(int argc, char** argv)
+
+//this fuction converts a wchar_t string to a char string. 
+//caller is responsible for freeing allocated memory
+char * wcharTochar(wchar_t * source)
+{
+	size_t len, i;
+	for (len = 0; source[len] != 0; len++)
+		;
+	len++;
+	char * newC = (char *)malloc(len);
+	for (i = 0; i < len - 1; i++)
+	{
+		newC[i] = source[i];
+	}
+	newC[len - 1] = 0;
+	return newC;
+}
+
+//this fuction converts a char string to a wchar_t string. 
+//caller is responsible for freeing allocated memory
+wchar_t * charTowchar(char * source)
+{
+	size_t len, i;
+	for (len = 0; source[len] != 0; len++)
+		;
+	len++;
+	wchar_t * newC = (wchar_t *)malloc(sizeof(wchar_t) * len);
+	for (i = 0; i < len - 1; i++)
+	{
+		newC[i] = source[i];
+	}
+	newC[len - 1] = 0;
+	return newC;
+}
+
+int strToint(char * source)
+{
+	int val = 0;
+	size_t len = strlen(source);
+
+	for (size_t i = 0; i < len; i++)
+	{
+		if (source[i] >= '0' && source[i] <= '9')
+		{
+			//val = val * 10 + source[i] - '0';
+			val += (source[i] - '0') * pow(10, len - i - 1);
+		}
+		else
+		{
+			return -1;
+		}
+	}
+
+	return val;
+}
+
+void doWork(char * drive, int times)
 {
 	unsigned char * buff = NULL;
-	int times = 2;
+	wchar_t dirNameW[1024] = { (wchar_t)0 };
+	wchar_t fileNameMask[1024] = { (wchar_t)0 };
 	int count;
 	ULARGE_INTEGER freeBytes;
 	ULARGE_INTEGER prevBytes;
+
+	{
+		wchar_t * temp = charTowchar(drive);
+		wcscat_s(dirNameW, temp);
+		wcscat_s(dirNameW, DIRECTORYNAMEL);
+		wcscat_s(fileNameMask, temp);
+		wcscat_s(fileNameMask, DIRECTORYNAMEL);
+		wcscat_s(fileNameMask, L"*");
+		free(temp);
+	}
 
 	for (count = 0; count < times; count++)
 	{
@@ -67,20 +133,20 @@ int main(int argc, char** argv)
 		fillBuff(buff, value, BUFFERSIZE);
 
 		//create Dir, if already exists, clear all files in directory
-		int test = CreateDirectory(DIRECTORYNAMEL, NULL);
+		int test = CreateDirectory(dirNameW, NULL);
 		if (test == 0)
 		{
 			DWORD error = GetLastError();
 
 			if (error == ERROR_ALREADY_EXISTS)
 			{
-				//TODO: Delete all files in directory
+				//Delete all files in directory
 				WIN32_FIND_DATA ffd;
 				HANDLE hfind = INVALID_HANDLE_VALUE;
-				wchar_t fullpath [1024];
+				wchar_t fullpath[1024];
 
 				// Find the first file in the directory.
-				hfind = FindFirstFile(FILENAMEMASK, &ffd);
+				hfind = FindFirstFile(fileNameMask, &ffd);
 				if (INVALID_HANDLE_VALUE != hfind)
 				{
 					int te;
@@ -89,7 +155,7 @@ int main(int argc, char** argv)
 						fullpath[0] = 0;
 						WIN32_FIND_DATA temp = ffd;
 						te = FindNextFile(hfind, &temp);
-						wcscat_s(fullpath, DIRECTORYNAMEL);
+						wcscat_s(fullpath, dirNameW);
 						wcscat_s(fullpath, L"\\");
 						wcscat_s(fullpath, ffd.cFileName);
 
@@ -109,24 +175,16 @@ int main(int argc, char** argv)
 		do
 		{
 			//fill directory with 1 Mb files
-			fileFill(buff, num, dataEnter);
+			fileFill(drive, buff, num, dataEnter);
 			num++;
-		
-			/*
-			//fill directory with 8 kb files
-			fileFill(buff, num, 1);
-			num++;
-			cout << "Disk Full\n";
-			break;
-			*/
 
 			//print out every 10000 cycles to show activity
 			if (0 == num % 10000)
 				cout << num << " iterations complete\n";
-			
+
 			if (0 == num % 100)
 			{// every 1000 iterations, check if disk is full
-				if (SHGetDiskFreeSpaceEx(L"C:\\", &freeBytes, NULL, NULL) != 0)
+				if (SHGetDiskFreeSpaceEx(charTowchar(drive) , &freeBytes, NULL, NULL) != 0)
 				{
 					if (freeBytes.HighPart == 0)
 					{//if high part of space is zero, check low part
@@ -169,6 +227,45 @@ int main(int argc, char** argv)
 
 		free(buff);
 	}//for
+}
+
+void displayUsage()
+{
+	
+}
+
+
+int main(int argc, char** argv)
+{
+	int times = 2;
+	char drive [4]= "C:\\";
+
+	if (argc > 3)
+	{
+		displayUsage();
+		exit(2);
+	}
+
+	for (int i = 1; i < argc; i++)
+	{
+		if (argv[i][0] >= '0'  && argv[i][0] <= '9')
+		{
+			times = strToint(argv[i]);
+			cout << "loop " << times << " times\n";
+		}
+		else if ((argv[i][0] >= 'A' && argv[i][0] <= 'Z') || (argv[i][0] >= 'a' && argv[i][0] <= 'z'))
+		{
+			drive[0] = argv[i][0];
+			cout << drive << "\n";
+		}
+		else
+		{
+			displayUsage();
+			exit(2);
+		}
+	}
+	
+	doWork(drive, times);
 
 	return 0;
 }
