@@ -22,7 +22,7 @@
     <ProjectGuid>{9E6C998C-A050-4C6A-B92D-DCA531E60B19}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>DiskFiller</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
