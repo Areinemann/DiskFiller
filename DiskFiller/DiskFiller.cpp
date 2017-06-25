@@ -55,7 +55,7 @@ char * wcharTochar(wchar_t * source)
 	char * newC = (char *)malloc(len);
 	for (i = 0; i < len - 1; i++)
 	{
-		newC[i] = source[i];
+		newC[i] = (char)source[i];
 	}
 	newC[len - 1] = 0;
 	return newC;
@@ -88,7 +88,7 @@ int strToint(char * source)
 		if (source[i] >= '0' && source[i] <= '9')
 		{
 			//val = val * 10 + source[i] - '0';
-			val += (source[i] - '0') * pow(10, len - i - 1);
+			val += (source[i] - '0') * (int)pow(10, len - i - 1);
 		}
 		else
 		{
@@ -231,7 +231,12 @@ void doWork(char * drive, int times)
 
 void displayUsage()
 {
-	
+	cout << "\n\n Disk Fill Utility\n";
+	cout << "  This utility writes alternating 10101010 and 01010101 patterns\n  to free hard drive sectors.\n\n";
+	cout << "  Usage: DiskFiller.exe [Drive] [Reps]\n";
+	cout << "  Where\n";
+	cout << "    Drive is the drive to fill, defaults to C:\\\n";
+	cout << "    Reps  is the number of times to fill the disk, defaults to 7\n\n";
 }
 
 
