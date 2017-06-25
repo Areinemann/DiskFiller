@@ -23,7 +23,7 @@ using namespace std;
 #define DIRECTORY_NAME_L		L"DiskFill\\"
 #define DISK_FULL_CHECK_COUNT	100
 #define PROGRESS_REPORT_COUNT	10000
-#define VERSION					"1.0.0"
+#define VERSION					"1.0.1"
 
 /*
 *fillBuff
@@ -223,7 +223,7 @@ void fillDisk(char * drive, int times)
 					{//if high part of free space is zero, check low part
 						if (freeBytes.LowPart == 0)
 						{//disk is full
-							cout << "Disk full after " << count << " loops\n";
+							cout << "Disk full after " << count + 1 << " loops\n";
 							break;
 						}
 						else if (freeBytes.LowPart != prevBytes.LowPart)
@@ -239,7 +239,7 @@ void fillDisk(char * drive, int times)
 								if (bufferWriteCount == 1)
 								{
 									//low part has not changed in last 5 free space checks, disk is full. 
-									cout << "Disk nearly Full with " << freeBytes.LowPart << " Bytes Free after " << count << " loops\n";
+									cout << "Disk nearly Full with " << freeBytes.LowPart << " Bytes Free after " << count + 1 << " loops\n";
 									break;
 								}
 								else if (bufferWriteCount == 1024)
